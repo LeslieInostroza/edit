@@ -24,5 +24,3 @@ enviar.addEventListener('click', () => {
     console.log(`1 ${JSON.stringify(data.job_id)}`);
   });
 });
-
-25610191
