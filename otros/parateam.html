@@ -1,0 +1,564 @@
+
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" integrity="sha384-WskhaSGFgHYWDcbwN70/dfYBj47jz9qbsMId/iRN3ewGhXQFZCSftd1LZCfmhktB" crossorigin="anonymous">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Odin -- v0.2 RayoApp</title>
+    <style type="text/css">
+    .bgVariable {
+        background-color: #fff;
+        -webkit-animation: random 10s infinite;
+        animation: random 10s infinite;
+    }
+
+    @keyframes random {
+        15% {
+            background-color: #0099cc40;
+        }
+        30% {
+            background-color: #ff69b440;
+        }
+        45% {
+            background-color: #03ffc140;
+        }
+        60% {
+            background-color: #00ee0040;
+        }
+        75% {
+            background-color: #9b30ff40;
+        }
+    }
+
+
+
+
+    table {
+        border-collapse: collapse;
+        border: 1px solid #000000;
+    }
+
+    table td {
+        border: 1px solid #000000;
+    }
+
+    #contenedorPrincipal {
+        margin: 40px
+    }
+    </style>
+</head>
+
+<body>
+    
+                <br>
+                <p>Pega los datos de carga desde el excel de Linio. Formato de carga <a target="_bank" href="https://docs.google.com/spreadsheets/d/1dlX6LDEtF30d8GZ7G3uw0tjoGpFKB-g3nCcate4ORfs/edit#gid=677984683"> aquí </a> </p>
+                <textarea id="contenedorDatos" class="bgVariable" name="excel_data" style="width: 50%;
+    border-radius: 4px;
+    margin-top: 20px;
+    height: 300px;
+    margin-bottom: 20px;"></textarea>
+                <br>
+                <input class="btn btn-danger" id="botonGeneraTabla" type="button" value="Crear Tabla" />
+                <input id="botonSimulacion" class="btn btn-info" type="button" value="Vista previa llamada API" />
+                <button class="btn btn-warning" id="toJSON">Crear tareas</button>
+                <br>
+                <hr>
+                <div id="excel_table"></div>
+            </div>
+            <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+            <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js" integrity="sha384-smHYKdLADwkXOn1EmN1qk/HfnUcbVRZyYmZ4qpPea6sjB/pTJ0euyQp0Mk8ck+5T" crossorigin="anonymous"></script>
+            <script src="ttj.js"></script>
+            <!--  modal -->
+            <div class="container">
+                <div class="modal fade" id="exampleModalLong" tabindex="-1" role="dialog" aria-labelledby="exampleModalLongTitle" aria-hidden="true">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="exampleModalLongTitle">Vista Previa</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body" id="modalBodyOk">
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!--  modal -->
+                <script type="text/javascript">
+                tienePickup = 0;
+                tieneDelivery = 0;
+                templatePickup = [];
+                templateDelivery = [];
+                correspondenciaPickup = [];
+                correspondenciaDelivery = [];
+
+
+
+
+                // case para selector pickup
+                $(document).on('change', '#selectorPlantillaPickup', function() {
+                    switch ($(this).val()) {
+                        case "egloppickup":
+                            templatePickup = [{ "label": "clienterayo", "data": "" }, { "label": "campo2", "data": "" }]
+                            break;
+                              case "genericoPickup":
+                            templatePickup = [
+                            { "label": "clienterayo", "data": "" }, 
+                            { "label": "cecodelivery", "data": "" },
+                            { "label": "info1", "data": "" },
+                            { "label": "info2", "data": "" }
+                            ]
+                            break;
+                        default:
+                            templatePickup = [];
+                    }
+                    $("#detallePickup").html("");
+                    for (x in templatePickup) {
+
+                        $("#detallePickup").append("<div class=\"form-group\"> <span indicador=" + x + " class=\"label label-primary templateField\">" + templatePickup[x].label + " </span><label> corresponde a: </label> <select class=\"form-control selectoresPareoPickup selectoresPareo\"><option value=\"\" selected></option></select></div></br>");
+
+                    }
+                });
+
+                // fin case para selector pickup
+
+
+
+                // case para selector Delivery
+                $(document).on('change', '#selectorPlantillaDelivery', function() {
+                    switch ($(this).val()) {
+                        case "eglopdelivery":
+                            templateDelivery = [{ "label": "guiadespacho", "data": "" }, { "label": "codigobarra", "data": "" }, { "label": "clienterayo", "data": "" }]
+                            break;
+                        case "liniobodega":
+                            templateDelivery = [{ "label": "clienterayo", "data": "" }, { "label": "campo2", "data": "" }]
+                            break;
+                             case "genericoDelivery":
+                            templateDelivery = [
+                            { "label": "clienterayo", "data": "" }, 
+                            { "label": "cecodelivery", "data": "" },
+                            { "label": "info1", "data": "" },
+                            { "label": "info2", "data": "" }
+                            ]
+                            break;
+                        case "bicehipotecariadelivery":
+                            templateDelivery = [{ "label": "clienterayo", "data": "" }, { "label": "ejecutivo", "data": "" }, { "label": "info1", "data": "" }, { "label": "info2", "data": "" }, { "label": "info3", "data": "" }]
+                            break;
+                        default:
+                            templateDelivery = [];
+                    }
+                    $("#detalleDelivery").html("");
+                    for (x in templateDelivery) {
+                        //console.log(templatePickup[x].label)                        
+                        $("#detalleDelivery").append("<div class=\"form-group\"> <span indicador=" + x + " class=\"label label-primary templateField\">" + templateDelivery[x].label + "</span><label >  corresponde a:</label> <select class=\"form-control selectoresPareoDelivery selectoresPareo\"><option  value=\"\" selected></option></select></div></br>");
+                    }
+                });
+
+                // fin case para selector Delivery
+
+
+
+
+                $(document).ready(function() {
+                    $('input[type=radio][name=optradio]').change(function() {
+                        console.log("valor:" + this.value);
+
+                        if (this.value == 'Pickup y Delivery') {
+                            console.log("Pickup y Delivery");
+                            $('#selectorPlantillaPickup').prop('disabled', false);
+                            $('#selectorPlantillaDelivery').prop('disabled', false);
+                            tienePickup = 1;
+                            tieneDelivery = 1;
+                        } else if (this.value == 'Pickup') {
+                            console.log("Pickup");
+                            $('#selectorPlantillaPickup').prop('disabled', false);
+                            $('#selectorPlantillaDelivery').prop('disabled', true);
+                            tienePickup = 1;
+                            tieneDelivery = 0;
+
+                        } else {
+                            console.log("Delivery");
+
+                            $('#selectorPlantillaPickup').prop('disabled', true);
+                            $('#selectorPlantillaDelivery').prop('disabled', false);
+                            tienePickup = 0;
+                            tieneDelivery = 1;
+
+                        }
+
+                    });
+
+
+                    // accion para options 
+
+                    $(document).on('change', '.selectoresPareoPickup', function() {
+                        console.log($(this).parent().children(".templateField").text());
+                        console.log($(this).parent().children(".templateField").attr("indicador"));
+                        indicadorInside = $(this).parent().children(".templateField").attr("indicador");
+                        campoLabelInside = $(this).val();
+                        correspondenciaPickup[indicadorInside] = campoLabelInside;
+
+                    })
+
+                    $(document).on('change', '.selectoresPareoDelivery', function() {
+                        console.log($(this).parent().children(".templateField").text());
+                        console.log($(this).parent().children(".templateField").attr("indicador"));
+                        indicadorInside = $(this).parent().children(".templateField").attr("indicador");
+                        campoLabelInside = $(this).val();
+                        correspondenciaDelivery[indicadorInside] = campoLabelInside;
+
+                    })
+
+
+                    // fin opctions
+
+
+
+
+
+
+
+                });
+
+
+                encabezados = [];
+
+                function simulacion() {
+                        $("#logStatus").val("");
+                        var convierte = $('#tablaPrincipal').tableToJSON(); // Convert the table into a javascript object
+                        //console.log(table);
+                        objJSON = convierte;
+
+                        objJSON.forEach(function(filaDatos, indicador) {
+                            console.log(indicador);
+                            simulaPideRayo(filaDatos, indicador);
+                        });
+
+                    
+                
+
+
+
+                function generateTable() {
+                    var data = $('textarea[name=excel_data]').val();
+                    //console.log(data);
+                    var rows = data.split("\n");
+
+                    var table = $('<table id=\"tablaPrincipal\" class=\"table table-striped\">');
+
+
+
+                    // Insert into DOM
+                    $('#excel_table').html(table);
+
+                    table.append("<thead  class=\"thead-dark\" id=\"encabezadoPrincipal\"/>");
+
+                    table.append("<tbody id=\"bodyPrincipal\"/>");
+
+
+
+
+                    for (var y in rows) {
+
+                        if (y == 0) {
+                            //console.log("es el header");
+                            encabezados = [];
+
+                            var cells = rows[y].split("\t");
+                            var row = $('<tr />');
+                            for (var x in cells) {
+                                encabezados[x] = cells[x];
+                                row.append('<th>' + cells[x] + '</td>');
+                                console.log(cells[x]);
+                            }
+                            $("#encabezadoPrincipal").append(row);
+
+                            // carga selectoresPareo
+                            for (x in encabezados) {
+                                $(".selectoresPareo").append("<option value=\"" + encabezados[x] + "\">" + encabezados[x] + "</option>");
+
+
+                            }
+
+                            // fin  carga selectoresPareo
+
+
+
+                        } else {
+
+                            //console.log("ROW:"+y);
+                            //console.log(rows[y]);
+                            var cells = rows[y].split("\t");
+                            var row = $('<tr />');
+                            for (var x in cells) {
+                                row.append('<td>' + cells[x] + '</td>');
+                            }
+                            $("#bodyPrincipal").append(row);
+
+                        }
+
+
+                    }
+
+                }
+
+
+                exitos = 0;
+
+                call = 1;
+
+                function safeCall(filaDatos2, indicador2) {
+                    call++;
+                    var x = call * 350;
+                    //alert(x);
+                    setTimeout(function() {
+                        // console.log(filaDatos2.Email);
+                        pideRayo(filaDatos2, indicador2);
+
+                    }, x);
+                }
+
+
+
+                function pideRayo(parami, indicador3) {
+                    var request = new XMLHttpRequest();
+
+                    request.open('POST', '');
+
+                    request.setRequestHeader('Content-Type', 'application/json');
+
+                    request.onreadystatechange = function() {
+                        if (this.readyState === 4) {
+                            // console.log('Status:', this.status);
+                            //console.log('Headers:', this.getAllResponseHeaders());
+                            $("#logStatus").val($("#logStatus").val() + "Log nº" + (indicador3 + 1) + ":" + this.responseText);
+                            if (this.status == 200) {
+                                exitos += 1;
+                                $("#tareasOk").html(exitos);
+                            } else {
+
+                                //   $("#logStatus").val("Error! No se recibió status 200 en la creación de la tarea nº "+ (indicador3+1 ))
+                            }
+                            //resetea variables
+                            if (indicador3 == (objJSON.length - 1)) {
+                                exitos = 0;
+                                call = 1;
+                                $("#contenedorDatos").val("");
+                            }
+                            // fin resetea variables
+
+
+                        }
+                    };
+
+
+                    //crea el body del request
+                    bodyFinalOld = {
+                        "api_key": $("#selectorCuentas").val(),
+                        "order_id": parami.orden,
+                        "job_description": parami.productos,
+                        "customer_email": parami.email,
+                        "customer_username": parami.cliente,
+                        "customer_phone": parami.telefono,
+                        "customer_address": parami.direccion + "," + parami.comuna,
+                        //"latitude":"30.7188978",
+                        //"longitude":"76.810298",
+                        "job_delivery_datetime": parami.entregamaxima,
+                        "custom_field_template": $("#selectorPlantillaDelivery").val(),
+                        "meta_data": [{ "label": "clienterayo", "data": $("#selectorClientes").val() }],
+                        "team_id": $("#selectorEquipo").val(),
+                        "auto_assignment": $("#selectorAuto").val(),
+                        "has_pickup": tienePickup,
+                        "has_delivery": tieneDelivery,
+                        "layout_type": "0",
+                        "tracking_link": 1,
+                        "timezone":"180",
+                        //"fleet_id":"636",
+                        /*"ref_images": ["http://tookanapp.com/wp-content/uploads/2015/11/logo_dark.png","http://tookanapp.com/wp-content/uploads/2015/11/logo_dark.png"], */
+                        "notify": 1,
+                        "tags": parami.tags,
+                        //"geofence":0
+                    }
+
+
+
+
+                    for (x in correspondenciaPickup) {
+
+                        templatePickup[x].data = parami[correspondenciaPickup[x]];
+                        //console.log(x);
+
+
+                    }
+                    for (x in correspondenciaDelivery) {
+
+                        templateDelivery[x].data = parami[correspondenciaDelivery[x]];
+                        //console.log(x);
+
+
+                    }
+
+
+
+                    bodyFinal = {
+                        "api_key": $("#selectorCuentas").val(),
+                        "order_id": parami.orden,
+                        "team_id": $("#selectorEquipo").val(),
+                        "auto_assignment": $("#selectorAuto").val(),
+                        "job_description": parami.descripcion,
+
+                        "job_pickup_phone": parami.telefono_recogida,
+                        "job_pickup_name": parami.nombre_recogida,
+                        "job_pickup_email": parami.email_recogida,
+                        "job_pickup_address": parami.direccionrecogida + "," + parami.comuna_recogida,
+
+                        "job_pickup_datetime": parami.hora_recogida,
+                        "customer_email": parami.email,
+                        "customer_username": parami.cliente,
+                        "customer_phone": parami.telefono,
+                        "customer_address": parami.direccion + "," + parami.comuna,
+
+                        "job_delivery_datetime": parami.entregamaxima,
+
+                        "custom_field_template": $("#selectorPlantillaDelivery").val(),
+                        "meta_data": templateDelivery,
+
+
+                        "pickup_custom_field_template": $("#selectorPlantillaPickup").val(),
+                        //"pickup_meta_data":[{"label":"clienterayo","data":$("#selectorClientes").val()}],
+                        "pickup_meta_data": templatePickup,
+
+                        "has_pickup": tienePickup,
+                        "has_delivery": tieneDelivery,
+                        "layout_type": "0",
+                        "tracking_link": 1,
+                        "timezone": "180",
+                        "notify": 1,
+                        "tags": parami.tags,
+                        "geofence": 0
+                    }
+
+
+
+
+                    // fin crea body
+                    request.send(JSON.stringify(bodyFinal));
+                }
+
+
+
+                function simulaPideRayo(parami, indicador3) {
+
+
+                    for (x in correspondenciaPickup) {
+
+                        templatePickup[x].data = parami[correspondenciaPickup[x]];
+                        //console.log(x);
+
+
+                    }
+                    for (x in correspondenciaDelivery) {
+
+                        templateDelivery[x].data = parami[correspondenciaDelivery[x]];
+                        //console.log(x);
+
+
+                    }
+
+
+                    bodyFinal = {
+                        "api_key": $("#selectorCuentas").val(),
+                        "order_id": parami.orden,
+                        "team_id": $("#selectorEquipo").val(),
+                        "auto_assignment": $("#selectorAuto").val(),
+                        "job_description": parami.descripcion,
+
+                        "job_pickup_phone": parami.telefono_recogida,
+                        "job_pickup_name": parami.nombre_recogida,
+                        "job_pickup_email": parami.email_recogida,
+                        "job_pickup_address": parami.direccionrecogida + "," + parami.comuna_recogida,
+
+                        "job_pickup_datetime": parami.hora_recogida,
+                        "customer_email": parami.email,
+                        "customer_username": parami.cliente,
+                        "customer_phone": parami.telefono,
+                        "customer_address": parami.direccion + "," + parami.comuna,
+
+                        "job_delivery_datetime": parami.entregamaxima,
+
+                        "custom_field_template": $("#selectorPlantillaDelivery").val(),
+                        "meta_data": templateDelivery,
+
+
+                        "pickup_custom_field_template": $("#selectorPlantillaPickup").val(),
+                        //"pickup_meta_data":[{"label":"clienterayo","data":$("#selectorClientes").val()}],
+                        "pickup_meta_data": templatePickup,
+
+                        "has_pickup": tienePickup,
+                        "has_delivery": tieneDelivery,
+                        "layout_type": "0",
+                        "tracking_link": 1,
+                        "timezone": "180",
+                        "notify": 1,
+                        "tags": parami.tags,
+                        "geofence": 0
+                    }
+
+
+                    $("#modalBodyOk").html(JSON.stringify(bodyFinal, undefined, 2));
+                    $('#exampleModalLong').modal('show');
+
+
+                    // fin crea body
+                }
+
+
+
+
+
+                $('#toJSON').click(function() {
+
+                    if ($("input[name='optradio']:checked").val() == undefined) {
+
+                        alert("Debes seleccionar el tipo de tarea (pickup, delivery o ambas)");
+                    } else {
+                        $("#logStatus").val("");
+                        var convierte = $('#tablaPrincipal').tableToJSON(); // Convert the table into a javascript object
+                        //console.log(table);
+                        objJSON = convierte;
+
+                        objJSON.forEach(function(filaDatos, indicador) {
+                            console.log(indicador);
+                            safeCall(filaDatos, indicador);
+                        });
+
+                    }
+
+
+
+                });
+
+                $('#botonSimulacion').click(function() {
+
+                    simulacion();
+
+
+                });
+
+
+                $('#botonGeneraTabla').click(function() {
+
+                    generateTable();
+
+
+                });
+                </script>
+</body>
+
+</html>
