@@ -1,0 +1,29 @@
+img{
+  position: relative;
+  top: 8px;
+  height: 40px;
+}
+
+nav .nav-wrapper {
+  background-color: gray;
+}
+
+.dropdown-content li>span {
+  color: red;
+
+}
+.btn{
+  width: 100%;
+  
+}
+
+.select-wrapper input.select-dropdown{
+  padding-top: 20px;
+}
+.btn-large {
+  margin-top: 30px;
+}
+
+#jobId{
+  margin-top: 25px;
+}
